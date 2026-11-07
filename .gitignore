@@ -1,5 +1,3 @@
-# Cle API : elle vit dans une variable d'environnement, jamais dans un fichier.
-# Ces lignes sont la au cas ou tu passerais un jour a un fichier .env.
 .env
 *.key
 
