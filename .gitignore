@@ -1,0 +1,14 @@
+# Cle API : elle vit dans une variable d'environnement, jamais dans un fichier.
+# Ces lignes sont la au cas ou tu passerais un jour a un fichier .env.
+.env
+*.key
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Sorties de containerlab (a venir)
+clab-*/
+*.tar
