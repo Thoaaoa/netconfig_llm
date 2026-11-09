@@ -1,0 +1,17 @@
+name: ospf2
+
+topology:
+  nodes:
+    R1:
+      kind: frr
+      image: quay.io/frrouting/frr:containerlab-10.7.1
+      daemons:
+        - ospfd
+    R2:
+      kind: frr
+      image: quay.io/frrouting/frr:containerlab-10.7.1
+      daemons:
+        - ospfd
+
+  links:
+    - endpoints: ["R1:eth1", "R2:eth1"]
