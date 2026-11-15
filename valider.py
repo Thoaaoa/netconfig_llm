@@ -2,6 +2,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 import anthropic
 import subprocess
+import time
 
 
 CONSIGNES = {
@@ -54,6 +55,29 @@ def clab(*arguments):
     return r.returncode, r.stdout + r.stderr
 
 
+def vtysh(noeud, commande):
+    r = subprocess.run(
+        ["sudo", "docker", "exec", f"clab-ospfgen-{noeud}", "vtysh", "-c", commande],
+        capture_output=True, text=True,
+    )
+    return r.stdout
+
+
+def attendre_full(noeud, limite=90, pas=5):
+    debut = time.monotonic()
+    while True:
+        sortie = vtysh(noeud, "show ip ospf neighbor")
+        ecoule = int(time.monotonic() - debut)
+
+        if "Full" in sortie:
+            return True, ecoule
+
+        if ecoule >= limite:
+            return False, ecoule
+
+        print(f"  pas encore Full ({ecoule}s)")
+        time.sleep(pas)
+
 configs = {}
 
 for nom, consigne in CONSIGNES.items():
@@ -84,3 +108,6 @@ if code != 0:
     print(sortie[-1500:])
     raise SystemExit("le deploiement a echoue")
 print("deploye")
+
+full, secondes = attendre_full("R1")
+print(f"Full : {full} (apres {secondes}s)")
