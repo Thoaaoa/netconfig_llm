@@ -55,28 +55,37 @@ def clab(*arguments):
     return r.returncode, r.stdout + r.stderr
 
 
-def vtysh(noeud, commande):
+def docker_exec(noeud, *commande):
     r = subprocess.run(
-        ["sudo", "docker", "exec", f"clab-ospfgen-{noeud}", "vtysh", "-c", commande],
+        ["sudo", "docker", "exec", f"clab-ospfgen-{noeud}", *commande],
         capture_output=True, text=True,
     )
-    return r.stdout
+    return r.returncode, r.stdout + r.stderr
 
 
-def attendre_full(noeud, limite=90, pas=5):
+def vtysh(noeud, commande):
+    _, sortie = docker_exec(noeud, "vtysh", "-c", commande)
+    return sortie
+
+
+def attendre(test, limite=90, pas=3):
     debut = time.monotonic()
     while True:
-        sortie = vtysh(noeud, "show ip ospf neighbor")
+        if test():
+            return True, int(time.monotonic() - debut)
         ecoule = int(time.monotonic() - debut)
-
-        if "Full" in sortie:
-            return True, ecoule
-
         if ecoule >= limite:
             return False, ecoule
-
-        print(f"  pas encore Full ({ecoule}s)")
         time.sleep(pas)
+
+
+def est_full():
+    return "Full" in vtysh("R1", "show ip ospf neighbor")
+
+
+def loopback_joignable():
+    code, _ = docker_exec("R1", "ping", "-c", "1", "-W", "1", "-I", "1.1.1.1", "2.2.2.2")
+    return code == 0
 
 configs = {}
 
@@ -109,5 +118,13 @@ if code != 0:
     raise SystemExit("le deploiement a echoue")
 print("deploye")
 
-full, secondes = attendre_full("R1")
-print(f"Full : {full} (apres {secondes}s)")
+full, t_full = attendre(est_full)
+print(f"adjacence Full : {full}  ({t_full}s)")
+
+if full:
+    joignable, t_ping = attendre(loopback_joignable, limite=30)
+    print(f"loopback joignable   : {joignable}  ({t_ping}s de plus)")
+else:
+    joignable = False
+
+
