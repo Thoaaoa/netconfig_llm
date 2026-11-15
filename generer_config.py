@@ -3,7 +3,6 @@ import anthropic
 
 MODELE = "claude-opus-5-5"
 
-# anthropic.Anthropic() lit ANTHROPIC_API_KEY dans l'environnement tout seul.
 client = anthropic.Anthropic()
 
 
